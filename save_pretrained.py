@@ -14,7 +14,7 @@ from pathlib import Path
 @click.option('--datset_options', default=None)
 @click.option('--save_dir', default="pretrained")
 @click.option('--save_name', default="saved")
-def run(dataset_name, datset_options, model_name, save_dir, save_name):
+def run(dataset_name, scorer_name, datset_options, model_name, save_dir, save_name):
     if dataset_name is not None:
         dataset = load_dataset(dataset_name, datset_options)
         dataset.save_to_disk("./" + save_dir + "/" + save_name)
