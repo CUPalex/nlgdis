@@ -39,8 +39,7 @@ def summarize(model, tokenizer, text, device, sample, max_length=512, num_beams=
 @click.option('--model_name', default="t5-base-cnn")
 @click.option('--save_iter', default=100)
 @click.option('--sample', default=False)
-@click.option('--start_iter', default=0)
-def run(num_beams, dataset_name, split, model_name, save_iter, sample, start_iter):
+def run(num_beams, dataset_name, split, model_name, save_iter, sample):
     device = torch.device("cuda:0")
     
     if dataset_name == "xsum":
@@ -88,8 +87,7 @@ def run(num_beams, dataset_name, split, model_name, save_iter, sample, start_ite
         
     
     summarized = []
-    for it, item in enumerate(dataset[split][start_iter:]):
-        i = it + start_iter
+    for i, item in enumerate(dataset[split]):
         summarized.append(summarize(model, tokenizer, text_transform(item[article_column]), device, sample, num_beams=num_beams))
         if (i + 1) % save_iter == 0:
             with open(Path(__file__).parent / "generated" / f"{model_name}-tested-{dataset_name}-{split}-sample-{sample}-iter-{i}.pkl", "wb") as file:
