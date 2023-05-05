@@ -3,7 +3,7 @@ import torch
 import click
 import numpy as np
 from pathlib import Path
-from datasets import load_dataset
+from datasets import load_from_disk
 from transformers import RobertaTokenizer, RobertaForSequenceClassification
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from nltk.tokenize import sent_tokenize
@@ -104,7 +104,7 @@ def run(dataset_name, split, generated_res_path, scorer_name):
     
     print("Reading dataset...")
     if dataset_name == "xsum":
-        dataset = load_dataset("./pretrained/xsum")
+        dataset = load_from_disk("./pretrained/xsum")
         input_column = "document"
         ref_column = "summary"
     else:

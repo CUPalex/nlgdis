@@ -44,13 +44,13 @@ def run(num_beams, dataset_name, split, model_name, save_iter, sample, start_ite
     device = torch.device("cuda:0")
     
     if dataset_name == "xsum":
-        dataset = load_from_disk("xsum")
+        dataset = load_from_disk("./pretrained/xsum")
         article_column = "document"
     elif dataset_name == "cnn-v2":
-        dataset = load_from_disk("cnn-v2")
+        dataset = load_from_disk("./pretrained/cnn-v2")
         article_column = "article"
     elif dataset_name == "paws":
-        dataset = load_from_disk("paws")
+        dataset = load_from_disk("./pretrained/paws")
         article_column = "sentence1"
     else:
         raise ValueError("Wrong dataset")
