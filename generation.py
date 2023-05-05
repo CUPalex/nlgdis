@@ -5,30 +5,40 @@ import pickle
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import click
 from pathlib import Path
+from torch.utils.data import DataLoader
 
-def summarize(model, tokenizer, text, device, sample, max_length=512, num_beams=50):
-    input_ids = tokenizer.encode(text, return_tensors="pt", add_special_tokens=True, max_length=max_length, truncation=True)
+def summarize(model, tokenizer, dataset, article_column, device, sample, max_length=512, num_beams=30):
+    dataset = dataset.map(lambda item: {article_column : tokenizer(
+        list(item[article_column]), return_tensors="pt", add_special_tokens=True, max_length=max_length, truncation=True
+    )["input_ids"]}, batched=True, batch_size=16)
+    
+    dataloader = DataLoader(dataset, batch_size=4)
+    
     if sample:
         with torch.no_grad():
-            generated_ids = []
-            for _ in range(num_beams):
-                generated_id = model.generate(
-                    input_ids=input_ids.to(device),
+            res = []
+            for batch in dataloader:
+                generated_ids = model.generate(
+                    input_ids=torch.vstack(batch[article_column]).T.to(device),
                     do_sample=True,
                     top_p=0.95,
-                    num_return_sequences=1,
+                    num_return_sequences=num_beams,
                     max_length=max_length
-                ).flatten()
-                generated_ids.append(generated_id)
+                )
+                res.extend([list(gen) for gen in generated_ids])
     else:
         with torch.no_grad():
-            generated_ids = model.generate(
-                input_ids=input_ids.to(device),
-                num_beams=num_beams,
-                num_return_sequences=num_beams,
-                max_length=max_length
-            )
-    preds = [tokenizer.decode(g, skip_special_tokens=True, clean_up_tokenization_spaces=True) for g in generated_ids]
+            res = []
+            for batch in dataloader:
+                generated_ids = model.generate(
+                    input_ids=torch.vstack(batch[article_column]).T.to(device),
+                    num_beams=num_beams,
+                    num_return_sequences=num_beams,
+                    max_length=max_length
+                )
+                res.extend([list(gen) for gen in generated_ids])
+            
+    preds = tokenizer.batch_decode(res, skip_special_tokens=True, clean_up_tokenization_spaces=True)
     torch.cuda.empty_cache()
     return preds
 
@@ -39,7 +49,8 @@ def summarize(model, tokenizer, text, device, sample, max_length=512, num_beams=
 @click.option('--model_name', default="t5-base-cnn")
 @click.option('--save_iter', default=100)
 @click.option('--sample', default=False)
-def run(num_beams, dataset_name, split, model_name, save_iter, sample):
+@click.option('--start_iter', default=0)
+def run(num_beams, dataset_name, split, model_name, save_iter, sample, start_iter):
     device = torch.device("cuda:0")
     
     if dataset_name == "xsum":
@@ -81,17 +92,17 @@ def run(num_beams, dataset_name, split, model_name, save_iter, sample):
     else:
         raise ValueError("Wrong model")
         
+    def transform(item):
+        item[article_column] = text_transform(item[article_column])
+        return item
+        
         
     with open(Path(__file__).parent / "generated" / f"{model_name}-tested-{dataset_name}-{split}-test-pkl-sample-{sample}.pkl", "wb") as file:
         pickle.dump([], file)
         
     
-    summarized = []
-    for i, item in enumerate(dataset[split]):
-        summarized.append(summarize(model, tokenizer, text_transform(item[article_column]), device, sample, num_beams=num_beams))
-        if (i + 1) % save_iter == 0:
-            with open(Path(__file__).parent / "generated" / f"{model_name}-tested-{dataset_name}-{split}-sample-{sample}-iter-{i}.pkl", "wb") as file:
-                pickle.dump(summarized, file)
+    dataset = dataset[split].select(list(range(start_iter, len(dataset[split])))).map(transform)
+    summarized = summarize(model, tokenizer, dataset, article_column, device, sample, num_beams=num_beams)
         
     with open(Path(__file__).parent / "generated" / f"{model_name}-tested-{dataset_name}-{split}-sample-{sample}.pkl", "wb") as file:
         pickle.dump(summarized, file)
