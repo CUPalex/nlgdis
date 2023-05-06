@@ -78,7 +78,7 @@ def get_relevance_scorer(device):
 def get_coherence_scorer(device):
     tokenizer = GPT2Tokenizer.from_pretrained("./pretrained/coherence-scorer-tokenizer")
     model = GPT2LMHeadModel.from_pretrained("./pretrained/coherence-scorer-model", return_dict=True).to(device).eval()
-    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    tokenizer.pad_token = tokenizer.eos_token
 
     
     def count_loss(logits, inputs, attention_mask):
@@ -116,11 +116,11 @@ def run(dataset_name, split, generated_res_path, scorer_name):
         ref_column = "summary"
     elif dataset_name == "cnn-v2":
         dataset = load_from_disk("./pretrained/cnn-v2")
-        article_column = "article"
+        input_column = "article"
         ref_column = "highlights"
     elif dataset_name == "paws":
         dataset = load_from_disk("./pretrained/paws")
-        article_column = "sentence1"
+        input_column = "sentence1"
         ref_column = "sentence2"
     else:
         raise ValueError("Wrong dataset name")
