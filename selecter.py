@@ -14,21 +14,24 @@ def get_grammar_scorer(device):
     classifier_roberta_cola = RobertaForSequenceClassification.from_pretrained("./pretrained/grammar-scorer-model", num_labels=2).to(device)
     
     # the more the better
-    def grammar_scorer(input_sent, generated_sent):
+    def grammar_scorer(input_sents, generated_sents):
         # input_sent is not used
-        input_ids = classifier_tokenizer_roberta_cola(generated_sent, max_length=512, truncation=True, return_tensors="pt").to(device)
+        input_ids = classifier_tokenizer_roberta_cola(
+            generated_sents, max_length=512, truncation=True, padding=True, return_tensors="pt"
+        ).to(device)
         with torch.no_grad():
-            logits = classifier_roberta_cola(**input_ids).logits.flatten()
-        score = torch.nn.functional.softmax(logits)[1].item()
-        return score
+            logits = classifier_roberta_cola(**input_ids).logits
+        score = torch.nn.functional.softmax(logits, dim=-1).T[1].flatten().cpu().numpy()
+        return list(score)
+
     
     return grammar_scorer
 
 
 def get_random_scorer():
-    def random_scorer(input_sent, generated_sent):
+    def random_scorer(input_sents, generated_sents):
         # input_sent, generated_sent are not used
-        return np.random.rand()
+        return [np.random.rand() for _ in range(len(generated_sents))]
     
     return random_scorer
 
@@ -40,31 +43,36 @@ def get_relevance_scorer(device):
     label_to_explanation = {0: "entailment", 1: "neutral", 2 : "contradiction"}
     
     # the more the better
-    def relevance_scorer(input_sent, generated_sent):
-        article_sents = sent_tokenize(input_sent)
-        summary_sents = sent_tokenize(generated_sent)
+    def relevance_scorer(input_sents, generated_sents):
         contradiction_scores = []
-        for a_sent in article_sents:
-            contradiction_scores.append([])
-            for s_sent in summary_sents:
-                tokenized_input_seq_pair = tokenizer.encode_plus(a_sent, s_sent,
-                                                         max_length=256,
-                                                         return_token_type_ids=True, truncation=True)
-                input_ids = torch.Tensor(tokenized_input_seq_pair['input_ids']).long().unsqueeze(0)
-                token_type_ids = torch.Tensor(tokenized_input_seq_pair['token_type_ids']).long().unsqueeze(0)
-                attention_mask = torch.Tensor(tokenized_input_seq_pair['attention_mask']).long().unsqueeze(0)
+        for input_sent, generated_sent in zip(input_sents, generated_sents):
+            article_sents = sent_tokenize(input_sent)
+            summary_sents = sent_tokenize(generated_sent)
+            if len(article_sents) <= 0 or len(summary_sents) <= 0:
+                return None
 
-                with torch.no_grad():
-                    outputs = model(input_ids.to(device),
-                                    attention_mask=attention_mask.to(device),
-                                    token_type_ids=token_type_ids.to(device),
-                                    labels=None)
-                scores = torch.softmax(outputs[0], dim=1)[0].tolist()
-                contradiction_scores[-1].append(scores[2])
-        if len(contradiction_scores) > 0 and all([len(scores) > 0 for scores in contradiction_scores]):
-            scores = [min([1 - score for score in scores_]) for scores_ in contradiction_scores]
-            return sum(scores) / len(scores)
-        return None
+            all_possible_pairs = [
+                (a_sent, s_sent) for a_sent in article_sents for s_sent in summary_sents
+            ]
+            tokenized_input_seq_pair = tokenizer.batch_encode_plus(all_possible_pairs,
+                                                     max_length=256,
+                                                     return_token_type_ids=True,
+                                                     truncation=True,
+                                                     padding=True)
+            input_ids = torch.Tensor(tokenized_input_seq_pair['input_ids']).long()
+            token_type_ids = torch.Tensor(tokenized_input_seq_pair['token_type_ids']).long()
+            attention_mask = torch.Tensor(tokenized_input_seq_pair['attention_mask']).long()
+
+            with torch.no_grad():
+                outputs = model(input_ids.to(device),
+                                attention_mask=attention_mask.to(device),
+                                token_type_ids=token_type_ids.to(device),
+                                labels=None)
+            scores = torch.nn.functional.softmax(outputs.logits, dim=-1)[:, 2].flatten()
+
+            contradiction_score = torch.min(scores.reshape(-1, len(summary_sents)), dim=-1).values.mean().item()
+            contradiction_scores.append(contradiction_score)
+        return contradiction_scores
     return relevance_scorer
 
 def get_coherence_scorer(device):
@@ -72,25 +80,24 @@ def get_coherence_scorer(device):
     model = GPT2LMHeadModel.from_pretrained("./pretrained/coherence-scorer-model", return_dict=True).to(device).eval()
     tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
-    def perplexity(input_sent, generated_sent):
+    
+    def count_loss(logits, inputs, attention_mask):
+        labels = torch.nn.functional.one_hot(inputs.clone(), num_classes=50257)
+        labels = (labels.permute(2, 0, 1) * attention_mask).permute(1, 2, 0)
+        logits = (logits.permute(2, 0, 1) * attention_mask).permute(1, 2, 0)
+        return  torch.log((torch.nn.functional.softmax(logits[:, :-1, :], dim=-1) * labels[:, 1:, :]).sum(dim=-1)
+                         + (1 - attention_mask[:, 1:])).sum(dim=-1) / attention_mask.sum(dim=-1)
+
+    def perplexity(input_sents, generated_sents):
         # does not use input_sent
-        max_length = model.config.n_positions
-        stride=512
-        inputs = tokenizer(generated_sent, return_tensors='pt')
-        lls = []
-        for i in range(0, inputs['input_ids'].size(1), stride):
-            begin_loc = max(i + stride - max_length, 0)
-            end_loc = min(i + stride, inputs['input_ids'].size(1))
-            target_len = end_loc - i
-
-            input_ids = inputs['input_ids'][:, begin_loc:end_loc].to(device)
-            target_ids = input_ids.clone().to(device)
-
-            with torch.no_grad():
-                outputs = model(input_ids, labels=target_ids)
-                log_likelihood = outputs.loss * target_len
-            lls.append(log_likelihood)
-        return - torch.exp(torch.stack(lls).sum() / end_loc).item()
+        max_length = model.config.n_positions # 1024
+        inputs = tokenizer(
+            generated_sents, max_length=max_length, truncation=True, padding=True, return_tensors='pt'
+        )
+        with torch.no_grad():
+            outputs = model(inputs["input_ids"].to(device))
+            return list(count_loss(
+                outputs.logits.cpu(), inputs["input_ids"].cpu(), inputs["attention_mask"]).cpu().numpy())
     return perplexity
 
 
@@ -107,6 +114,14 @@ def run(dataset_name, split, generated_res_path, scorer_name):
         dataset = load_from_disk("./pretrained/xsum")
         input_column = "document"
         ref_column = "summary"
+    elif dataset_name == "cnn-v2":
+        dataset = load_from_disk("./pretrained/cnn-v2")
+        article_column = "article"
+        ref_column = "highlights"
+    elif dataset_name == "paws":
+        dataset = load_from_disk("./pretrained/paws")
+        article_column = "sentence1"
+        ref_column = "sentence2"
     else:
         raise ValueError("Wrong dataset name")
         
@@ -127,7 +142,7 @@ def run(dataset_name, split, generated_res_path, scorer_name):
         raise ValueError("Wrong scorer name")
         
     print("Scoring models...")
-    scores = [[scorer(inp[input_column], r) for r in res] for res, inp in zip(results, dataset[split])]
+    scores = [scorer([inp[input_column] for _ in range(len(res))], res) for res, inp in zip(results, dataset[split])]
     save_file = "{scorer}-{gen}".format(scorer=str(scorer_name), gen=str(generated_res_path).replace("/", "-"))
     with open(Path(__file__).parent / "scored" / "scores" / save_file, "wb") as file:
         pickle.dump(scores, file)
