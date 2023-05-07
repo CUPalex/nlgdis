@@ -147,7 +147,8 @@ def run(dataset_name, split, generated_res_path, scorer_name):
     for i, (res, inp) in enumerate(zip(results, dataset[split])):
         scores.append(scorer([inp[input_column] for _ in range(len(res))], res))
         if (i + 1) % 200 == 0:
-            with open(Path(__file__).parent / "scored" / "scores" / save_file + f"-iter{i}", "wb") as file:
+            cur_save_file = save_file + f"-iter{i}"
+            with open(Path(__file__).parent / "scored" / "scores" / cur_save_file, "wb") as file:
                 pickle.dump(scores, file)
     
     with open(Path(__file__).parent / "scored" / "scores" / save_file, "wb") as file:
