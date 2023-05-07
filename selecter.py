@@ -142,8 +142,14 @@ def run(dataset_name, split, generated_res_path, scorer_name):
         raise ValueError("Wrong scorer name")
         
     print("Scoring models...")
-    scores = [scorer([inp[input_column] for _ in range(len(res))], res) for res, inp in zip(results, dataset[split])]
     save_file = "{scorer}-{gen}".format(scorer=str(scorer_name), gen=str(generated_res_path).replace("/", "-"))
+    scores = []
+    for i, (res, inp) in enumerate(zip(results, dataset[split])):
+        scores.append(scorer([inp[input_column] for _ in range(len(res))], res))
+        if (i + 1) % 200 == 0:
+            with open(Path(__file__).parent / "scored" / "scores" / save_file + f"-iter{i}", "wb") as file:
+                pickle.dump(scores, file)
+    
     with open(Path(__file__).parent / "scored" / "scores" / save_file, "wb") as file:
         pickle.dump(scores, file)
     
