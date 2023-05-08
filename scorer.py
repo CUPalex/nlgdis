@@ -96,7 +96,9 @@ METRICS_WITH_REF = ["mover_score", "bleu", "rouge_1", "rouge_2", "rouge_l", "met
 @click.option('--s3_pyr', default=False)
 @click.option('--s3_resp', default=False)
 @click.option('--everything', default=False)
-def run(dataset_name, split, batch_size, selected_res_path, mover_score, blanc_help, blanc_tune, bleu, rouge_1, rouge_2, rouge_l, meteor, chrf, bertscore, bartscore, compression, coverage, length, novelty, density, repetition, rouge_we, s3_pyr, s3_resp, everything):
+@click.option('--harisma', default=False)
+@click.option('--beleriand', default=False)
+def run(dataset_name, split, batch_size, selected_res_path, mover_score, blanc_help, blanc_tune, bleu, rouge_1, rouge_2, rouge_l, meteor, chrf, bertscore, bartscore, compression, coverage, length, novelty, density, repetition, rouge_we, s3_pyr, s3_resp, everything, harisma, beleriand):
     
     print("Reading dataset...")
     if dataset_name == "xsum":
@@ -143,6 +145,12 @@ def run(dataset_name, split, batch_size, selected_res_path, mover_score, blanc_h
     )
     if everything:
         for metric_name in selected_metrics.keys():
+            selected_metrics[metric_name] = True
+    if harisma:
+        for metric_name in ["mover_score", "bartscore", "rouge_we", "s3_pyr", "s3_resp", "blanc_help"]:
+            selected_metrics[metric_name] = True
+    if beleriand:
+        for metric_name in ["bleu", "rouge_1", "rouge_2", "rouge_l", "meteor", "chrf", "bertscore", "compression", "coverage", "length", "novelty", "density", "repetition"]:
             selected_metrics[metric_name] = True
             
     for metric_name in selected_metrics.keys():
