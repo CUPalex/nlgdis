@@ -18,7 +18,7 @@ METRIC_NAME_TO_CLASS_AND_ARGS = dict(
        mover_score = (MoverScoreMetrics,
                       dict(
                           n_gram=2,
-                          model_name="./pretrained/mover_score"
+                          model_name="./pretrained/mover_score",
                           device="cuda:0",
                           batch_size=256
                      )),
@@ -44,7 +44,7 @@ METRIC_NAME_TO_CLASS_AND_ARGS = dict(
        chrf = (CHRFMetrics, {}),
        bertscore = (BERTScoreMetrics, dict(device="cuda:0")),
        bartscore = (BARTScoreMetrics, dict(
-                           checkpoint="./pretrained/bart_score"
+                           checkpoint="./pretrained/bart_score",
                            device="cuda:0")
                    ),
        compression = (CompressionMetrics, {}),
