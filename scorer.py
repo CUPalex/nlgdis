@@ -73,6 +73,7 @@ METRICS_WITH_REF = ["mover_score", "bleu", "rouge_1", "rouge_2", "rouge_l", "met
 @click.command()
 @click.option('--dataset_name', default="xsum")
 @click.option('--split', default="test")
+@click.option('--batch_size', default=128)
 @click.option('--selected_res_path', default="scored/selected/random-generated-xsum-beam-search.pkl")
 @click.option('--mover_score', default=False)
 @click.option('--blanc_help', default=False)
@@ -95,8 +96,7 @@ METRICS_WITH_REF = ["mover_score", "bleu", "rouge_1", "rouge_2", "rouge_l", "met
 @click.option('--s3_pyr', default=False)
 @click.option('--s3_resp', default=False)
 @click.option('--everything', default=False)
-def run(dataset_name, split, selected_res_path, mover_score, blanc_help, blanc_tune, bleu, rouge_1, rouge_2, rouge_l, meteor, chrf,
-       bertscore, bartscore, compression, coverage, length, novelty, density, repetition, rouge_we, s3_pyr, s3_resp, everything):
+def run(dataset_name, split, batch_size, selected_res_path, mover_score, blanc_help, blanc_tune, bleu, rouge_1, rouge_2, rouge_l, meteor, chrf, bertscore, bartscore, compression, coverage, length, novelty, density, repetition, rouge_we, s3_pyr, s3_resp, everything):
     
     print("Reading dataset...")
     if dataset_name == "xsum":
@@ -155,11 +155,32 @@ def run(dataset_name, split, selected_res_path, mover_score, blanc_help, blanc_t
             
             print(f"Measuring with {metric_name}...")
             if metric_name in METRICS_WITH_REF:
-                result = metric.evaluate_batch(selected, [dataset[split][i][ref_column] for i in range(len(dataset[split]))])
+                result = []
+                for i in range(0, len(selected), batch_size):
+                    batch_len = min(batch_size, len(selected) - i)
+                    batch_s = selected[i:i + batch_len]
+                    batch_d = [dataset[split][j][ref_column] for j in range(i, i + batch_len)]
+                    cur_result = metric.evaluate_batch(batch_s, batch_d)
+                    result.append(cur_result)
+                result = [value for sub_array in result for value in sub_array]
             elif metric_name in METRICS_WITH_INPUT:
-                result = metric.evaluate_batch(selected, [dataset[split][i][input_column] for i in range(len(dataset[split]))])
+                result = []
+                for i in range(0, len(selected), batch_size):
+                    batch_len = min(batch_size, len(selected) - i)
+                    batch_s = selected[i:i + batch_len]
+                    batch_d = [dataset[split][j][input_column] for j in range(i, i + batch_len)]
+                    cur_result = metric.evaluate_batch(batch_s, batch_d)
+                    result.append(cur_result)
+                result = [value for sub_array in result for value in sub_array]
             elif metric_name in METRICS_WITH_INPUT_REVERSED:
-                result = metric.evaluate_batch([dataset[split][i][input_column] for i in range(len(dataset[split]))], selected)
+                result = []
+                for i in range(0, len(selected), batch_size):
+                    batch_len = min(batch_size, len(selected) - i)
+                    batch_s = selected[i:i + batch_len]
+                    batch_d = [dataset[split][j][input_column] for j in range(i, i + batch_len)]
+                    cur_result = metric.evaluate_batch(batch_d, batch_s)
+                    result.append(cur_result)
+                result = [value for sub_array in result for value in sub_array]
             else:
                 raise ValueError(f"We forgot about metric {metric_name} while creating METRICS_WITH_REF and METRICS_WITH_INPUT lists!")
                 
