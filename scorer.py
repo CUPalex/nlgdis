@@ -147,7 +147,7 @@ def run(dataset_name, split, batch_size, selected_res_path, mover_score, blanc_h
         for metric_name in selected_metrics.keys():
             selected_metrics[metric_name] = True
     if harisma:
-        for metric_name in ["mover_score", "bartscore", "rouge_we", "s3_pyr", "s3_resp", "blanc_help"]:
+        for metric_name in ["mover_score", "bartscore", "rouge_we", "blanc_help"]: # "s3_pyr", "s3_resp"
             selected_metrics[metric_name] = True
     if beleriand:
         for metric_name in ["bleu", "rouge_1", "rouge_2", "rouge_l", "meteor", "chrf", "bertscore", "compression", "coverage", "length", "novelty", "density", "repetition"]:
