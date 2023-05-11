@@ -106,6 +106,7 @@ def get_coherence_scorer(device):
 @click.option('--split', default="test")
 @click.option('--generated_res_path', default="generated/t5-base-xsum-tested-xsum-test.pkl")
 @click.option('--scorer_name', default="random")
+@click.option('--start_iter', default=0)
 def run(dataset_name, split, generated_res_path, scorer_name):
     device = torch.device("cuda:0")
     
@@ -142,9 +143,11 @@ def run(dataset_name, split, generated_res_path, scorer_name):
         raise ValueError("Wrong scorer name")
         
     print("Scoring models...")
-    save_file = "{scorer}-{gen}".format(scorer=str(scorer_name), gen=str(generated_res_path).replace("/", "-"))
+    save_file = "{scorer}-{gen}-started-{start_iter}".format(scorer=str(scorer_name), gen=str(generated_res_path).replace("/", "-"),
+                                                            start_iter=str(start_iter))
     scores = []
-    for i, (res, inp) in enumerate(zip(results, dataset[split])):
+    for it, (res, inp) in enumerate(zip(results[start_iter:], dataset[split].select(list(range(start_iter, len(dataset[split])))))):
+        i = it + start_iter
         scores.append(scorer([inp[input_column] for _ in range(len(res))], res))
         if (i + 1) % 200 == 0:
             cur_save_file = save_file + f"-iter{i}"
