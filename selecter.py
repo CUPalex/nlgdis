@@ -107,7 +107,7 @@ def get_coherence_scorer(device):
 @click.option('--generated_res_path', default="generated/t5-base-xsum-tested-xsum-test.pkl")
 @click.option('--scorer_name', default="random")
 @click.option('--start_iter', default=0)
-def run(dataset_name, split, generated_res_path, scorer_name):
+def run(dataset_name, split, generated_res_path, scorer_name, start_iter):
     device = torch.device("cuda:0")
     
     print("Reading dataset...")
