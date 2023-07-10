@@ -151,7 +151,7 @@ def run(data_name, batch_size):
             
         print(f"Saving results of {metric_name}...")
         res_name = data_name + "-" + metric_name
-        with open(f"metrics-results/{res_name}.pkl", "wb") as file:
+        with open(f"results/{res_name}.pkl", "wb") as file:
             pickle.dump(result, file)
         torch.cuda.empty_cache()
     
