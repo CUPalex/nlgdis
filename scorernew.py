@@ -17,35 +17,35 @@ from nlgeval.metrics.statistical_measures import BaryScoreMetrics, DepthScoreMet
 METRIC_NAME_TO_CLASS_AND_ARGS = dict(
        bary_score = (BaryScoreMetrics,
                      dict(
-                          model_name = "bert-base-uncased",
-                          # device = "cuda:0"
+                          model_name = "./pretrained/blanc",
+                          device = "cuda:0"
                      )),
        depth_score = (DepthScoreMetrics,
                      dict(
-                          model_name = "bert-base-uncased",
-                          # device = "cuda:0"
+                          model_name = "./pretrained/blanc",
+                          device = "cuda:0"
                      )),
        info_lm = (InfoLMMetrics,
                      dict(
-                          model_name = "bert-base-uncased",
-                          # device = "cuda:0"
+                          model_name = "./pretrained/blanc",
+                          device = "cuda:0"
                      )),
        mover_score = (MoverScoreMetrics,
                       dict(
                           n_gram=1,
-                          # model_name="./pretrained/mover_score",
-                          # device="cuda:0",
-                          # batch_size=256
+                          model_name="./pretrained/mover_score",
+                          device="cuda:0",
+                          batch_size=256
                      )),
        blanc_help = (BlancMetrics, dict(
-                            # model_name = "./pretrained/blanc",
-                            # device="cuda:0",
+                            model_name = "./pretrained/blanc",
+                            device="cuda:0",
                             inference_batch_size = 256,
                             type= "help")
                     ),
        blanc_tune = (BlancMetrics, dict(
-                            # model_name = "./pretrained/blanc",
-                            # device="cuda:0",
+                            model_name = "./pretrained/blanc",
+                            device="cuda:0",
                             inference_batch_size = 256,
                             finetune_batch_size = 256,
                             finetune_epochs = 5,
@@ -60,8 +60,8 @@ METRIC_NAME_TO_CLASS_AND_ARGS = dict(
        chrf = (CHRFMetrics, {}),
        bertscore = (BERTScoreMetrics, dict(device="cuda:0")),
        bartscore = (BARTScoreMetrics, dict(
-                           # checkpoint="./pretrained/bart_score",
-                           # device="cuda:0")
+                           checkpoint="./pretrained/bart_score",
+                           device="cuda:0")
                    ),
        compression = (CompressionMetrics, {}),
        coverage = (CoverageMetrics, {}),
@@ -70,23 +70,23 @@ METRIC_NAME_TO_CLASS_AND_ARGS = dict(
        density = (DensityMetrics, {}),
        repetition = (RepetitionMetrics, {}),
        rouge_we_1 = (RougeWeMetrics, dict(n_gram=1,
-                                          # emb_path="./pretrained/rouge_we"
+                                          emb_path="./pretrained/rouge_we"
                                           )),
        rouge_we_2 = (RougeWeMetrics, dict(n_gram=2,
-                                          # emb_path="./pretrained/rouge_we"
+                                          emb_path="./pretrained/rouge_we"
                                           )),
        rouge_we_3 = (RougeWeMetrics, dict(n_gram=3,
-                                          # emb_path="./pretrained/rouge_we"
+                                          emb_path="./pretrained/rouge_we"
                                           )),
        s3_pyr = (S3Metrics, dict(
                            mode="pyr",
-                           # emb_path="./pretrained/rouge_we",
-                           # model_path="./pretrained/s3_pyr"
+                           emb_path="./pretrained/rouge_we",
+                           model_path="./pretrained/s3_pyr"
                    )),
        s3_resp = (S3Metrics, dict(
                            mode="resp",
-                           # emb_path="./pretrained/rouge_we",
-                           # model_path="./pretrained/s3_resp"
+                           emb_path="./pretrained/rouge_we",
+                           model_path="./pretrained/s3_resp"
                    ))
 )
 
@@ -151,7 +151,7 @@ def run(data_name, batch_size):
             
         print(f"Saving results of {metric_name}...")
         res_name = data_name + "-" + metric_name
-        with open(f"{res_name}.pkl", "wb") as file:
+        with open(f"metrics-results/{res_name}.pkl", "wb") as file:
             pickle.dump(result, file)
         torch.cuda.empty_cache()
     
