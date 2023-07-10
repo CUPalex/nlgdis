@@ -18,34 +18,34 @@ METRIC_NAME_TO_CLASS_AND_ARGS = dict(
        bary_score = (BaryScoreMetrics,
                      dict(
                           model_name = "bert-base-uncased",
-                          device = "cuda:0"
+                          # device = "cuda:0"
                      )),
        depth_score = (DepthScoreMetrics,
                      dict(
                           model_name = "bert-base-uncased",
-                          device = "cuda:0"
+                          # device = "cuda:0"
                      )),
        info_lm = (InfoLMMetrics,
                      dict(
                           model_name = "bert-base-uncased",
-                          device = "cuda:0"
+                          # device = "cuda:0"
                      )),
        mover_score = (MoverScoreMetrics,
                       dict(
                           n_gram=1,
                           # model_name="./pretrained/mover_score",
-                          device="cuda:0",
-                          batch_size=256
+                          # device="cuda:0",
+                          # batch_size=256
                      )),
        blanc_help = (BlancMetrics, dict(
                             # model_name = "./pretrained/blanc",
-                            device="cuda:0",
+                            # device="cuda:0",
                             inference_batch_size = 256,
                             type= "help")
                     ),
        blanc_tune = (BlancMetrics, dict(
                             # model_name = "./pretrained/blanc",
-                            device="cuda:0",
+                            # device="cuda:0",
                             inference_batch_size = 256,
                             finetune_batch_size = 256,
                             finetune_epochs = 5,
@@ -61,7 +61,7 @@ METRIC_NAME_TO_CLASS_AND_ARGS = dict(
        bertscore = (BERTScoreMetrics, dict(device="cuda:0")),
        bartscore = (BARTScoreMetrics, dict(
                            # checkpoint="./pretrained/bart_score",
-                           device="cuda:0")
+                           # device="cuda:0")
                    ),
        compression = (CompressionMetrics, {}),
        coverage = (CoverageMetrics, {}),
@@ -107,14 +107,14 @@ def run(data_name, batch_size):
     print("Reading dataset...")
     if data_name in PATH_TO_DATA:
         data = pd.read_csv(PATH_TO_DATA[data_name])
-        generated = data.generated
+        generated = list(data.generated)
         if data_name == "summarisation":
-            inputs = data.document
-            refs = data.summary
+            inputs = list(data.document)
+            refs = list(data.summary)
         elif data_name == "open_generation":
-            inputs = data.prompt
+            inputs = list(data.prompt)
         else:
-            inputs = data.original
+            inputs = list(data.original)
     else:
         raise ValueError("Wrong dataset name")
            
