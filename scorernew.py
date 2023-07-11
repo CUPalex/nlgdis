@@ -91,6 +91,8 @@ METRIC_NAME_TO_CLASS_AND_ARGS = dict(
 )
 
 ALL_METRICS = ["blanc_help", "blanc_tune", "compression", "coverage", "length", "novelty", "density", "repetition", "mover_score", "bleu", "rouge_1", "rouge_2", "rouge_l", "meteor", "chrf", "bertscore", "bartscore", "rouge_we_1", "rouge_we_2", "rouge_we_3", "s3_pyr", "s3_resp", "depth_score", "bary_score", "info_lm"]
+CUDA_METRICS = ["blanc_help", "blanc_tune", "mover_score", "bertscore", "bartscore", "depth_score", "bary_score", "info_lm"]
+CPU_METRICS = ["compression", "coverage", "length", "novelty", "density", "repetition", "bleu", "rouge_1", "rouge_2", "rouge_l", "meteor", "chrf", "rouge_we_1", "rouge_we_2", "rouge_we_3", "s3_pyr", "s3_resp"]
 METRICS_WITH_INPUT = ["blanc_help", "blanc_tune", "compression", "coverage", "length", "novelty", "density", "repetition"]
 METRICS_WITH_REF = ["mover_score", "bleu", "rouge_1", "rouge_2", "rouge_l", "meteor", "chrf", "bertscore", "bartscore", "rouge_we_1", "rouge_we_2", "rouge_we_3", "s3_pyr", "s3_resp", "depth_score", "bary_score", "info_lm"]
 PATH_TO_DATA = dict(
@@ -103,7 +105,10 @@ PATH_TO_DATA = dict(
 @click.command()
 @click.option('--data_name', default="summarisation")
 @click.option('--batch_size', default=128)
-def run(data_name, batch_size):
+@click.option('--cuda', default=False)
+@click.option('--cpu', default=False)
+@click.option('--start_with', default="blanc_help")
+def run(data_name, batch_size, cuda, cpu, start_with):
     print("Reading dataset...")
     if data_name in PATH_TO_DATA:
         data = pd.read_csv(PATH_TO_DATA[data_name])
@@ -119,8 +124,19 @@ def run(data_name, batch_size):
         raise ValueError("Wrong dataset name")
            
     print("Measuring...")
+    
+    metrics_to_measure = ALL_METRICS
+    if cuda:
+        metrics_to_measure = CUDA_METRICS
+    elif cpu:
+        metrics_to_measure = CPU_METRICS
                 
-    for metric_name in ALL_METRICS:
+    started = False
+    for metric_name in metrics_to_measure:
+        if metric_name == start_with:
+            started = True
+        if not started:
+            continue
         print(f"Instantiating {metric_name}...")
         metric_class, metric_args = METRIC_NAME_TO_CLASS_AND_ARGS[metric_name]
         metric = metric_class(**metric_args)
