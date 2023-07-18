@@ -156,9 +156,9 @@ def run(data_name, batch_size, batch_size_bart_score, n_workers, cuda, cpu, star
         
         print(f"Measuring with {metric_name}...")
         if metric_name in METRICS_WITH_INPUT:
-            result = metric.evaluate_batch(batch_inp, batch_gen)
+            result = metric.evaluate_batch(inputs, generated)
         elif metric_name in METRICS_WITH_REF:
-            result = metric.evaluate_batch(batch_gen, batch_ref)
+            result = metric.evaluate_batch(generated, refs)
         else:
             raise ValueError(f"We forgot about metric {metric_name} while creating METRICS_WITH_REF and METRICS_WITH_INPUT lists!")
             
