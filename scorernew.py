@@ -68,12 +68,12 @@ def instantiate_metrics_with_batch_size_or_n_workers(batch_size, batch_size_bart
                                                    batch_size=batch_size_bart_score,
                                                    device="cuda:0")
                                                    )
-    METRIC_NAME_TO_CLASS_AND_ARGS["compression"] = (CompressionMetrics, {n_workers=n_workers})
-    METRIC_NAME_TO_CLASS_AND_ARGS["coverage"] = (CoverageMetrics, {n_workers=n_workers})
-    METRIC_NAME_TO_CLASS_AND_ARGS["length"] = (LengthMetrics, {n_workers=n_workers})
-    METRIC_NAME_TO_CLASS_AND_ARGS["novelty"] = (NoveltyMetrics, {n_workers=n_workers})
-    METRIC_NAME_TO_CLASS_AND_ARGS["density"] = (DensityMetrics, {n_workers=n_workers})
-    METRIC_NAME_TO_CLASS_AND_ARGS["repetition"] = (RepetitionMetrics, {n_workers=n_workers})
+    METRIC_NAME_TO_CLASS_AND_ARGS["compression"] = (CompressionMetrics, dict(n_workers=n_workers))
+    METRIC_NAME_TO_CLASS_AND_ARGS["coverage"] = (CoverageMetrics, dict(n_workers=n_workers))
+    METRIC_NAME_TO_CLASS_AND_ARGS["length"] = (LengthMetrics, dict(n_workers=n_workers))
+    METRIC_NAME_TO_CLASS_AND_ARGS["novelty"] = (NoveltyMetrics, dict(n_workers=n_workers))
+    METRIC_NAME_TO_CLASS_AND_ARGS["density"] = (DensityMetrics, dict(n_workers=n_workers))
+    METRIC_NAME_TO_CLASS_AND_ARGS["repetition"] = (RepetitionMetrics, dict(n_workers=n_workers))
     METRIC_NAME_TO_CLASS_AND_ARGS["mover_score"] = (MoverScoreMetrics,
                                                       dict(
                                                           n_gram=1,
