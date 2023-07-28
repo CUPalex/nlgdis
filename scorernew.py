@@ -61,7 +61,7 @@ METRIC_NAME_TO_CLASS_AND_ARGS = dict(
        bartscore = (BARTScoreMetrics, dict(
                                                    checkpoint="./pretrained/bart_score",
                                                    num_workers=2,
-                                                   batch_size=4,
+                                                   batch_size=8,
                                                    device="cuda:0")
                                                    ),
        compression = (CompressionMetrics, dict(n_workers=2)),
