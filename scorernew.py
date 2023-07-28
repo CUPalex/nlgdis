@@ -57,41 +57,44 @@ METRIC_NAME_TO_CLASS_AND_ARGS = dict(
                            mode="resp",
                            emb_path="./pretrained/rouge_we",
                            model_path="./pretrained/s3_resp"
-                   )),
-       bartscore = (BARTScoreMetrics, dict(
+                   ))
+)
+
+def instantiate_metrics_with_batch_size_or_n_workers(batch_size, batch_size_bart_score, n_workers):
+    global METRIC_NAME_TO_CLASS_AND_ARGS
+    METRIC_NAME_TO_CLASS_AND_ARGS["bartscore"] = (BARTScoreMetrics, dict(
                                                    checkpoint="./pretrained/bart_score",
-                                                   num_workers=2,
-                                                   batch_size=32,
+                                                   num_workers=n_workers,
+                                                   batch_size=batch_size_bart_score,
                                                    device="cuda:0")
-                                                   ),
-       compression = (CompressionMetrics, dict(n_workers=2)),
-       coverage = (CoverageMetrics, dict(n_workers=2)),
-       length = (LengthMetrics, dict(n_workers=2)),
-       novelty = (NoveltyMetrics, dict(n_workers=2)),
-       density = (DensityMetrics, dict(n_workers=2)),
-       repetition = (RepetitionMetrics, dict(n_workers=2)),
-       mover_score = (MoverScoreMetrics,
+                                                   )
+    METRIC_NAME_TO_CLASS_AND_ARGS["compression"] = (CompressionMetrics, dict(n_workers=n_workers))
+    METRIC_NAME_TO_CLASS_AND_ARGS["coverage"] = (CoverageMetrics, dict(n_workers=n_workers))
+    METRIC_NAME_TO_CLASS_AND_ARGS["length"] = (LengthMetrics, dict(n_workers=n_workers))
+    METRIC_NAME_TO_CLASS_AND_ARGS["novelty"] = (NoveltyMetrics, dict(n_workers=n_workers))
+    METRIC_NAME_TO_CLASS_AND_ARGS["density"] = (DensityMetrics, dict(n_workers=n_workers))
+    METRIC_NAME_TO_CLASS_AND_ARGS["repetition"] = (RepetitionMetrics, dict(n_workers=n_workers))
+    METRIC_NAME_TO_CLASS_AND_ARGS["mover_score"] = (MoverScoreMetrics,
                                                       dict(
                                                           n_gram=1,
                                                           model_name="./pretrained/mover_score",
                                                           device="cuda:0",
-                                                          batch_size=256
-                                                     )),
-       blanc_help = (BlancMetrics, dict(
+                                                          batch_size=batch_size
+                                                     ))
+    METRIC_NAME_TO_CLASS_AND_ARGS["blanc_help"] = (BlancMetrics, dict(
                                                             model_name = "./pretrained/blanc",
                                                             device="cuda:0",
-                                                            inference_batch_size = 256,
+                                                            inference_batch_size = batch_size,
                                                             type= "help")
-                                                    ),
-       blanc_tune = (BlancMetrics, dict(
+                                                    )
+    METRIC_NAME_TO_CLASS_AND_ARGS["blanc_tune"] = (BlancMetrics, dict(
                                                         model_name = "./pretrained/blanc",
                                                         device="cuda:0",
-                                                        inference_batch_size = 512,
-                                                        finetune_batch_size = 512,
+                                                        inference_batch_size = batch_size,
+                                                        finetune_batch_size = batch_size,
                                                         finetune_epochs = 5,
                                                         type= "tune")
                                                 )
-)
 
 ALL_METRICS = ["blanc_help", "blanc_tune", "compression", "coverage", "length", "novelty", "density", "repetition", "mover_score", "bleu", "rouge_1", "rouge_2", "rouge_l", "meteor", "chrf", "bertscore", "bartscore", "rouge_we_1", "rouge_we_2", "rouge_we_3", "s3_pyr", "s3_resp", "depth_score", "bary_score", "info_lm"]
 CUDA_METRICS = ["blanc_help", "blanc_tune", "mover_score", "bertscore", "bartscore", "depth_score", "bary_score", "info_lm"]
@@ -107,10 +110,16 @@ PATH_TO_DATA = dict(
 
 @click.command()
 @click.option('--data_name', default="summarisation")
+@click.option('--batch_size', default=128)
+@click.option('--batch_size_bart_score', default=128)
+@click.option('--n_workers', default=2)
 @click.option('--cuda', default=False)
 @click.option('--cpu', default=False)
 @click.option('--start_with', default="blanc_help")
-def run(data_name, cuda, cpu, start_with):
+def run(data_name, batch_size, batch_size_bart_score, n_workers, cuda, cpu, start_with):
+    print("Instantiating rest of metrics...")
+    instantiate_metrics_with_batch_size_or_n_workers(batch_size, batch_size_bart_score, n_workers)
+    
     print("Reading dataset...")
     if data_name in PATH_TO_DATA:
         data = pd.read_csv(PATH_TO_DATA[data_name])
