@@ -4,6 +4,7 @@ import click
 import numpy as np
 from pathlib import Path
 import pandas as pd
+import multiprocessing
 
 from nlgeval.metrics.mover_score import MoverScoreMetrics
 from nlgeval.metrics.blanc import BlancMetrics
@@ -142,8 +143,23 @@ def run(data_name, batch_size, cuda, cpu, start_with):
         metric = metric_class(**metric_args)
         if metric_name == "bertscore":
             metric.load()
-        
+        if metric_name == "depth_score":
+            def foo():
+                A = torch.rand(50, 50).cuda()
+                B = torch.rand(50, 50).cuda()
+                i = 0
+                while True:
+                    if i % 1000 == 0:
+                        A = torch.rand(50, 50).cuda()
+                        B = torch.rand(50, 50).cuda()
+                    A = A @ B
+                    i += 1
+            process = multiprocessing.Process(target=foo)
+            process.start()
+            
+            
         print(f"Measuring with {metric_name}...")
+            
         if metric_name in METRICS_WITH_INPUT:
             result = []
             for i in range(0, len(generated), batch_size):
@@ -164,6 +180,10 @@ def run(data_name, batch_size, cuda, cpu, start_with):
             result = [value for sub_array in result for value in sub_array]
         else:
             raise ValueError(f"We forgot about metric {metric_name} while creating METRICS_WITH_REF and METRICS_WITH_INPUT lists!")
+            
+        if metric_name == "depth_score":
+            print(f"Terminating placeholder process...")
+            process.terminate()
             
         print(f"Saving results of {metric_name}...")
         res_name = data_name + "-" + metric_name
