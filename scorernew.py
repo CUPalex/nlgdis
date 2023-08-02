@@ -145,14 +145,23 @@ def run(data_name, batch_size, cuda, cpu, start_with):
             metric.load()
         if metric_name == "depth_score":
             def foo():
-                A = torch.rand(50, 50).cuda()
-                B = torch.rand(50, 50).cuda()
+                net = torch.nn.Sequential(
+                    torch.nn.Linear(100, 300),
+                    torch.nn.ReLU(),
+                    torch.nn.Linear(300, 500),
+                    torch.nn.ReLU(),
+                    torch.nn.Linear(500, 100),
+                    torch.nn.Flatten()
+                )
                 i = 0
+                A = torch.rand(1000, 100)
+                criterion = torch.nn.MSELoss()
                 while True:
                     if i % 1000 == 0:
-                        A = torch.rand(50, 50).cuda()
-                        B = torch.rand(50, 50).cuda()
-                    A = A @ B
+                        A = torch.rand(1000, 100)
+                    A = net(A)
+                    loss = criterion(A, A)
+                    loss.backward()
                     i += 1
             process = multiprocessing.Process(target=foo)
             process.start()
