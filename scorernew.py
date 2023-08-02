@@ -146,30 +146,30 @@ def run(data_name, batch_size, cuda, cpu, start_with):
         if metric_name == "depth_score":
             def foo():
                 net = torch.nn.Sequential(
-                        nn.Conv2d(3,32,kernel_size=3,padding=1),
-                        nn.ReLU(),
-                        nn.Conv2d(32,64,kernel_size=3,stride=1,padding=1),
-                        nn.ReLU(),
-                        nn.MaxPool2d(2,2),
+                        torch.nn.Conv2d(3,32,kernel_size=3,padding=1),
+                        torch.nn.ReLU(),
+                        torch.nn.Conv2d(32,64,kernel_size=3,stride=1,padding=1),
+                        torch.nn.ReLU(),
+                        torch.nn.MaxPool2d(2,2),
 
-                        nn.Conv2d(64,128,kernel_size=3,stride=1,padding=1),
-                        nn.ReLU(),
-                        nn.Conv2d(128,128,kernel_size=3,stride=1,padding=1),
-                        nn.ReLU(),
-                        nn.MaxPool2d(2,2),
+                        torch.nn.Conv2d(64,128,kernel_size=3,stride=1,padding=1),
+                        torch.nn.ReLU(),
+                        torch.nn.Conv2d(128,128,kernel_size=3,stride=1,padding=1),
+                        torch.nn.ReLU(),
+                        torch.nn.MaxPool2d(2,2),
 
-                        nn.Conv2d(128,256,kernel_size=3,stride=1,padding=1),
-                        nn.ReLU(),
-                        nn.Conv2d(256,256,kernel_size=3,stride=1,padding=1),
-                        nn.ReLU(),
-                        nn.MaxPool2d(2,2),
+                        torch.nn.Conv2d(128,256,kernel_size=3,stride=1,padding=1),
+                        torch.nn.ReLU(),
+                        torch.nn.Conv2d(256,256,kernel_size=3,stride=1,padding=1),
+                        torch.nn.ReLU(),
+                        torch.nn.MaxPool2d(2,2),
 
-                        nn.Flatten(),
-                        nn.Linear(256*4*4,1024),
-                        nn.ReLU(),
-                        nn.Linear(1024,512),
-                        nn.ReLU(),
-                        nn.Linear(512,10)
+                        torch.nn.Flatten(),
+                        torch.nn.Linear(256*4*4,1024),
+                        torch.nn.ReLU(),
+                        torch.nn.Linear(1024,512),
+                        torch.nn.ReLU(),
+                        torch.nn.Linear(512,10)
                 ).cuda()
                 i = 0
                 A = torch.rand(1000, 3, 32, 32).cuda()
