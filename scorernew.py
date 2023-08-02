@@ -172,13 +172,13 @@ def run(data_name, batch_size, cuda, cpu, start_with):
                         nn.Linear(512,10)
                 ).cuda()
                 i = 0
-                A = torch.rand(1000, 32, 32).cuda()
+                A = torch.rand(1000, 3, 32, 32).cuda()
                 criterion = torch.nn.MSELoss()
                 while True:
                     if i % 1000 == 0:
                         del A
                         torch.cuda.empty_cache()
-                        A = torch.rand(1000, 100).cuda()
+                        A = torch.rand(1000, 3, 32, 32).cuda()
                     A = net(A)
                     loss = criterion(A, A * 2)
                     loss.backward()
